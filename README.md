@@ -5,13 +5,14 @@ $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
 
 
 //É preciso criar um VPC Endpoint 
-Service: com.amazonaws.us-east-1.s3
+Service: com.amazonaws.us-east-1.s3 | Interface Gateway
 e colocar ele na tabela de rotas da subnet privada
-E também um Service: ssm.us-east-1.amazonaws.com
 
 //É preciso criar uma role com: (SSMRoleInstance)
 - Acesso ao SSM - Com isso consigo me conectar na instância EC2 sem precisar de bastion e/ou está em suma subnet publica.
 - Acesso full ao S3 - Com isso eu consigo copiar os arquivos para dentro da minha EC2
+
+//Além da role é preciso ter um NAT Gateway pois é um requisito escondido do SSM.
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 - Agora preciso ter um jeito de deixar as app baterem na porta 9000 e conseguir fazer isso de uma outra instancia ec2: Criar um SG e colocar ALL Traffic e especificar o endereço IP da outra instância que deseja acessar a instância com a aplicação em Delphi
@@ -21,16 +22,22 @@ E também um Service: ssm.us-east-1.amazonaws.com
 //Copiar o arquivo .exe do S3 para o servidor
 aws s3 cp s3://hello-delphi/hello_delphi.exe .
 
-//Endereços IPs & Security Groups
-windows-server-delphi: 10.0.143.160
-windows-server-curl: 10.0.139.34
-
-//Dar permissão no SG do windows-server-delphi ao IP 
-//Dar permissão no SG do windows-server-curl ao IP 
-
 //No windows-server-curl quero pingar o windows-server-delphi
 ping 
 Invoke-WebRequest -Uri "endereço-ip:9000/ping"
 
-//No windows-server-delphi quero pingar o windows-server-curl
-ping 
+
+//Configurar uma tarefa para deixar o .exe executando
+
+//Desativar firewall windows - é preciso pra conseguir se conectar nas instancias ec2 windows
+netsh advfirewall set allprofiles state off
+
+//Endereços IPs
+ec2-windows-delphi: 10.0.128.46 //COPIAR DO S3 E COLOCAR .EXE PARA RODAR AQUI 
+ec2-windows-curl: 10.0.134.118 PERMITIDO
+minha-ec2-linux-2: 10.0.130.232
+minha-ec2-linux-1: 10.0.143.97 PERMITIDO
+
+//Requisição
+curl 10.0.128.46:9000/ping  
+
